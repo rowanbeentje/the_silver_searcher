@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <math.h>
+#include <unistd.h>
 
 #include "ignore.h"
 #include "log.h"
@@ -44,8 +45,8 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
     int prev_line_offset = 0;
     int pre_match_offset = 0;
     int current_wrap_line_indent;
-    int current_wrap_line_end;
-    int lines_for_current_match;
+    int current_wrap_line_end = 0;
+    int lines_for_current_match = 0;
     int cur_match = 0;
     /* TODO the line below contains a terrible hack */
     int lines_since_last_match = 1000000; /* if I initialize this to INT_MAX it'll overflow */

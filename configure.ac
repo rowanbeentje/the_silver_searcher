@@ -15,7 +15,7 @@ PKG_CHECK_MODULES([LZMA], [liblzma])
 
 # Run CFLAGS="-g" ./configure if you want debug symbols
 CFLAGS="$CFLAGS $PCRE_CFLAGS -Wall -Wextra -std=c89 -D_GNU_SOURCE"
-LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS -lm"
 
 AC_CHECK_HEADERS([pthread.h, zlib.h lzma.h])
 
