@@ -30,6 +30,7 @@ char* realpath(const char *path, char *resolved_path) {
 const char *color_line_number = "\e[1;33m"; /* yellow with black background */
 const char *color_match = "\e[30;43m"; /* black with yellow background */
 const char *color_path = "\e[1;32m";   /* bold green */
+const char *color_truncate = "\e[7m"; /* inverted */
 
 /* TODO: try to obey out_fd? */
 void usage() {
@@ -53,6 +54,7 @@ Search options:\n\
 --color-line-number     Color codes for line numbers (Default: 1;33)\n\
 --color-match           Color codes for result match numbers (Default: 30;43)\n\
 --color-path            Color codes for path names (Default: 1;32)\n\
+--color-truncate-warn   Color codes for --shortoutput long line truncation (Default: 7;0)\n\
 --column                Print column numbers in results\n\
 --line-numbers          Print line numbers even for streams\n\
 -C --context [LINES]    Print lines before and after matches (Default: 2)\n\
@@ -116,12 +118,14 @@ void init_options() {
     opts.color_path = ag_strdup(color_path);
     opts.color_match = ag_strdup(color_match);
     opts.color_line_number = ag_strdup(color_line_number);
+    opts.color_truncate = ag_strdup(color_truncate);
 }
 
 void cleanup_options() {
     free(opts.color_path);
     free(opts.color_match);
     free(opts.color_line_number);
+    free(opts.color_truncate);
 
     if (opts.query) {
         free(opts.query);
@@ -178,6 +182,7 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
         { "color-path", required_argument, NULL, 0 },
         { "color-match", required_argument, NULL, 0 },
         { "color-line-number", required_argument, NULL, 0 },
+        { "color-truncate-warn", required_argument, NULL, 0 },
         { "column", no_argument, &opts.column, 1 },
         { "context", optional_argument, NULL, 'C' },
         { "debug", no_argument, NULL, 'D' },
@@ -387,6 +392,10 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
                 } else if (strcmp(longopts[opt_index].name, "color-path") == 0) {
                     free(opts.color_path);
                     ag_asprintf(&opts.color_path, "\e[%sm", optarg);
+                    break;
+                } else if (strcmp(longopts[opt_index].name, "color-truncate-warn") == 0) {
+                    free(opts.color_truncate);
+                    ag_asprintf(&opts.color_truncate, "\e[%sm", optarg);
                     break;
                 } else if (strcmp(longopts[opt_index].name, "silent") == 0) {
                     set_log_level(LOG_LEVEL_NONE);

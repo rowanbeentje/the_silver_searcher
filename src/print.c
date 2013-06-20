@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
+#include <math.h>
 
 #include "ignore.h"
 #include "log.h"
@@ -41,6 +43,9 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
     int last_prev_line = 0;
     int prev_line_offset = 0;
     int pre_match_offset = 0;
+    int current_wrap_line_indent;
+    int current_wrap_line_end;
+    int lines_for_current_match;
     int cur_match = 0;
     /* TODO the line below contains a terrible hack */
     int lines_since_last_match = 1000000; /* if I initialize this to INT_MAX it'll overflow */
@@ -149,6 +154,12 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
                             }
                             pre_match_offset++;
                         }
+                        current_wrap_line_indent = floor(log10(line)) + 1 + 3;
+                        if (opts.print_heading == 0 && !opts.search_stream) {
+                            current_wrap_line_indent += strlen(path) + 1;
+                        }
+                        current_wrap_line_end = get_next_line_break_position(buf, prev_line_offset + pre_match_offset, i, current_wrap_line_indent);
+                        lines_for_current_match = 1;
                     }
 
                     if (printing_a_match && opts.color) {
@@ -167,6 +178,19 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
                                 fprintf(out_fd, "%s", opts.color_match);
                             }
                             printing_a_match = TRUE;
+                        }
+                        if (opts.shorter_output && j == current_wrap_line_end) {
+                            if (lines_for_current_match == 4) {
+                                fprintf(out_fd, "... %s(long line truncated)%s\n", opts.color_truncate, color_reset);
+                                j = i+1;
+                                break;
+                            }
+                            fprintf(out_fd, "\n   ");
+                            lines_for_current_match++;
+                            current_wrap_line_end = get_next_line_break_position(buf, j+1, i, (lines_for_current_match == 4) ? 30 : 3);
+                            if (buf[j] == ' ' || buf[j] == '\t') {
+                                continue;
+                            }
                         }
                         fputc(buf[j], out_fd);
                     }
@@ -230,4 +254,40 @@ const char* normalize_path(const char* path) {
     } else {
         return path;
     }
+}
+
+int get_next_line_break_position(const char *buf, const int line_start_position, const int line_end_position, const int current_indent) {
+    static int max_line_length = 0;
+    if (!max_line_length) {
+        struct winsize w;
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+        if (w.ws_col) {
+            max_line_length = w.ws_col;
+        } else {
+            max_line_length = 72;
+        }
+    }
+
+    if (line_end_position - line_start_position <= max_line_length - current_indent) {
+        return -1;
+    }
+
+    int i;
+    int last_breakable_position = 0;
+    for (i = line_start_position; i < line_end_position; i++) {
+        switch (buf[i]) {
+            case ' ':
+            case '\t':
+            case '-':
+                last_breakable_position = i;
+                break;
+        }
+        if (i - line_start_position >= max_line_length - current_indent) {
+            break;
+        }
+    }
+    if (last_breakable_position) {
+        return last_breakable_position;
+    }
+    return line_start_position + max_line_length - current_indent;
 }

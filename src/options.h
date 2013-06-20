@@ -30,6 +30,7 @@ typedef struct {
     char *color_line_number;
     char *color_match;
     char *color_path;
+    char *color_truncate;
     int column;
     int context;
     int follow_symlinks;

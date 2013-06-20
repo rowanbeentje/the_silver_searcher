@@ -9,5 +9,6 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
 void print_line_number(const int line, const char sep);
 void print_file_separator();
 const char* normalize_path(const char* path);
+int get_next_line_break_position(const char *buf, const int line_start_position, const int line_end_position, const int current_indent);
 
 #endif
