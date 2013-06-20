@@ -54,6 +54,7 @@ typedef struct {
     int search_zip_files;
     int search_hidden_files;
     int search_stream; /* true if tail -F blah | ag */
+    int shorter_output;
     int stats;
     ino_t stdout_inode;
     char *query;

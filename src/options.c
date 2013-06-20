@@ -82,6 +82,7 @@ Search options:\n\
 -S --smart-case         Match case insensitively unless PATTERN contains\n\
                         uppercase characters\n\
 --search-binary         Search binary files for matches\n\
+--[no]shortoutput       Output matches with trimmed indentation and long lines truncated\n\
 --stats                 Print stats (files scanned, time taken, etc.)\n\
 -t --all-text           Search all text files (doesn't include hidden files)\n\
 -u --unrestricted       Search all files (ignore .agignore, .gitignore, etc.;\n\
@@ -205,6 +206,7 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
         { "nogroup", no_argument, &group, 0 },
         { "noheading", no_argument, &opts.print_heading, 0 },
         { "nopager", no_argument, NULL, 0 },
+        { "noshortoutput", no_argument, &opts.shorter_output, 0 },
         { "pager", required_argument, NULL, 0 },
         { "parallel", no_argument, &opts.parallel, 1},
         { "path-to-agignore", required_argument, NULL, 'p'},
@@ -213,6 +215,7 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
         { "search-binary", no_argument, &opts.search_binary_files, 1 },
         { "search-zip", no_argument, &opts.search_zip_files, 1 },
         { "search-files", no_argument, &opts.search_stream, 0 },
+        { "shortoutput", no_argument, &opts.shorter_output, 1 },
         { "silent", no_argument, NULL, 0 },
         { "skip-vcs-ignores", no_argument, NULL, 'U' },
         { "smart-case", no_argument, NULL, 'S' },

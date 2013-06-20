@@ -40,6 +40,7 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
     int prev_line = 0;
     int last_prev_line = 0;
     int prev_line_offset = 0;
+    int pre_match_offset = 0;
     int cur_match = 0;
     /* TODO the line below contains a terrible hack */
     int lines_since_last_match = 1000000; /* if I initialize this to INT_MAX it'll overflow */
@@ -138,10 +139,22 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
                         fprintf(out_fd, "%i:", (matches[last_printed_match].start - prev_line_offset) + 1);
                     }
 
+                    /* standardise preceding whitespace if shorter output option set */
+                    pre_match_offset = 0;
+                    if (opts.shorter_output) {
+                        fprintf(out_fd, "   ");
+                        for (j = prev_line_offset; j <= i; j++) {
+                            if (buf[j] != ' ' && buf[j] != '\t') {
+                                break;
+                            }
+                            pre_match_offset++;
+                        }
+                    }
+
                     if (printing_a_match && opts.color) {
                         fprintf(out_fd, "%s", opts.color_match);
                     }
-                    for (j = prev_line_offset; j <= i; j++) {
+                    for (j = prev_line_offset + pre_match_offset; j <= i; j++) {
                         if (j == matches[last_printed_match].end && last_printed_match < matches_len) {
                             if (opts.color) {
                                 fprintf(out_fd, "%s", color_reset);
