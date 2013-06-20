@@ -86,6 +86,7 @@ Search options:\n\
 --search-binary         Search binary files for matches\n\
 --[no]shortoutput       Output matches with trimmed indentation and long lines truncated\n\
 --stats                 Print stats (files scanned, time taken, etc.)\n\
+--stats-summary         Print a single line of summary stats at scan end\n\
 -t --all-text           Search all text files (doesn't include hidden files)\n\
 -u --unrestricted       Search all files (ignore .agignore, .gitignore, etc.;\n\
                         searches binary and hidden files as well)\n\
@@ -225,6 +226,7 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
         { "skip-vcs-ignores", no_argument, NULL, 'U' },
         { "smart-case", no_argument, NULL, 'S' },
         { "stats", no_argument, &opts.stats, 1 },
+        { "stats-summary", no_argument, &opts.stats_summary, 1 },
         { "unrestricted", no_argument, NULL, 'u' },
         { "version", no_argument, &version, 1 },
         { "word-regexp", no_argument, NULL, 'w' },

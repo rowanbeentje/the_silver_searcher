@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
     double time_diff;
     pthread_t *workers = NULL;
     int workers_len;
+    int casing_was_smart = 0;
 
     set_log_level(LOG_LEVEL_WARN);
 
@@ -76,8 +77,10 @@ int main(int argc, char **argv) {
     if (pthread_mutex_init(&work_queue_mtx, NULL))
         die("pthread_mutex_init failed!");
 
-    if (opts.casing == CASE_SMART)
+    if (opts.casing == CASE_SMART) {
+        casing_was_smart = 1;
         opts.casing = is_lowercase(opts.query) ? CASE_INSENSITIVE : CASE_SENSITIVE;
+    }
 
     if (opts.literal) {
         if (opts.casing == CASE_INSENSITIVE) {
@@ -137,6 +140,22 @@ int main(int argc, char **argv) {
         time_diff /= 1000000;
 
         printf("%ld matches\n%ld files searched\n%ld bytes searched\n%f seconds\n", stats.total_matches, stats.total_files, stats.total_bytes, time_diff);
+    }
+
+    if (opts.stats_summary) {
+        char *casetype;
+        switch (opts.casing) {
+            case CASE_SENSITIVE:
+                casetype = "sensitive";
+                break;
+            case CASE_INSENSITIVE:
+                casetype = "insensitive";
+                break;
+            default:
+                casetype = "UNKNOWN";
+                break;
+        }
+        printf("\e[1;34m # A total of \e[1;31m%ld\e[1;34m lines with matches found.\e[0;34m Case \e[1;34m%s\e[0;34m%s, symlinks \e[1;34m%s\e[0;34m.\e[0m\n", stats.total_matches, casetype, casing_was_smart ? " (was smart)" : "", opts.follow_symlinks ? "on" : "off");
     }
 
     if (opts.pager) {

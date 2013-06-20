@@ -122,7 +122,7 @@ void search_buf(const char *buf, const int buf_len,
         matches_len = invert_matches(matches, matches_len, buf_len);
     }
 
-    if (opts.stats) {
+    if (opts.stats || opts.stats_summary) {
         pthread_mutex_lock(&stats_mtx);
         stats.total_bytes += buf_len;
         stats.total_files++;
