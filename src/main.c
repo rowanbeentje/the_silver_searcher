@@ -1,5 +1,6 @@
 #include <pcre.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,6 +19,10 @@
 #include <windows.h>
 #endif
 
+extern void exitCleanly() {
+    printf("\r\e[0m\e[K");
+    exit(1);
+}
 int main(int argc, char **argv) {
     char **base_paths = NULL;
     char **paths = NULL;
@@ -76,6 +81,9 @@ int main(int argc, char **argv) {
         die("pthread_mutex_init failed!");
     if (pthread_mutex_init(&work_queue_mtx, NULL))
         die("pthread_mutex_init failed!");
+
+    signal(SIGTERM, exitCleanly);
+    signal(SIGINT, exitCleanly);
 
     if (opts.casing == CASE_SMART) {
         casing_was_smart = 1;
