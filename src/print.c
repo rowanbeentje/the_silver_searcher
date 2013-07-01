@@ -163,7 +163,7 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
                             }
                             pre_match_offset++;
                         }
-                        current_wrap_line_indent = floor(log10(line)) + 1 + 3;
+                        current_wrap_line_indent = ceil(log10(line + 1)) + 1 + 3;
                         if (opts.print_heading == 0 && !opts.search_stream) {
                             current_wrap_line_indent += strlen(path) + 1;
                         }
