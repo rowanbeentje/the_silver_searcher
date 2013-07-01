@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include <pthread.h>
 
 #include "log.h"
 #include "util.h"
+#include "progress.h"
 
 static enum log_level log_threshold = LOG_LEVEL_ERR;
 
@@ -42,6 +44,7 @@ void vplog(const unsigned int level, const char *fmt, va_list args) {
     if (level < log_threshold) {
         return;
     }
+    clear_progress();
 
     FILE *stream = out_fd;
 
