@@ -46,7 +46,7 @@ void *progress_file_worker() {
             pthread_mutex_unlock(&print_mtx);
             progress_update_required = 0;
         }
-        usleep(50000);
+        nanosleep((struct timespec[]){{0, 50000000}}, NULL);
     }
     clear_progress();
 

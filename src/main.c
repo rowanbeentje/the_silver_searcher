@@ -24,6 +24,9 @@ extern void exitCleanly() {
     printf("\r\e[0m\e[K");
     exit(1);
 }
+void thread_interrupt_sig_handler() {
+    return;
+}
 int main(int argc, char **argv) {
     char **base_paths = NULL;
     char **paths = NULL;
@@ -123,6 +126,12 @@ int main(int argc, char **argv) {
     }
 
     if (opts.show_progress) {
+        struct sigaction interrupt_action;
+        interrupt_action.sa_handler = thread_interrupt_sig_handler;
+        interrupt_action.sa_flags = 0;
+        sigfillset(&interrupt_action.sa_mask);
+        sigaction(SIGUSR1, &interrupt_action, NULL);
+
         int rv = pthread_create(&progress_worker, NULL, &progress_file_worker, NULL);
         if (rv != 0) {
             die("error in pthread_create(): %s", strerror(rv));
@@ -154,6 +163,7 @@ int main(int argc, char **argv) {
 
     if (opts.show_progress) {
         progress_complete = 1;
+        pthread_kill(progress_worker, SIGUSR1);
         if (pthread_join(progress_worker, NULL)) {
             die("pthread_join failed!");
         }
