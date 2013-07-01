@@ -1,5 +1,6 @@
 #include "search.h"
 #include "scandir.h"
+#include "progress.h"
 
 void search_buf(const char *buf, const int buf_len,
                 const char *dir_full_path) {
@@ -15,6 +16,8 @@ void search_buf(const char *buf, const int buf_len,
             return;
         }
     }
+
+    update_progress(dir_full_path);
 
     int matches_len = 0;
     match *matches;

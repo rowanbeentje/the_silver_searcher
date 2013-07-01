@@ -56,6 +56,7 @@ typedef struct {
     int search_hidden_files;
     int search_stream; /* true if tail -F blah | ag */
     int shorter_output;
+    int show_progress;
     int stats;
     int stats_summary;
     ino_t stdout_inode;

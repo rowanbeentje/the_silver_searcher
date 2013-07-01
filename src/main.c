@@ -14,6 +14,7 @@
 #include "options.h"
 #include "search.h"
 #include "util.h"
+#include "progress.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -31,6 +32,7 @@ int main(int argc, char **argv) {
     int study_opts = 0;
     double time_diff;
     pthread_t *workers = NULL;
+    pthread_t progress_worker = NULL;
     int workers_len;
     int casing_was_smart = 0;
 
@@ -81,6 +83,8 @@ int main(int argc, char **argv) {
         die("pthread_mutex_init failed!");
     if (pthread_mutex_init(&work_queue_mtx, NULL))
         die("pthread_mutex_init failed!");
+    if (pthread_mutex_init(&progress_mtx, NULL))
+        die("pthread_cond_init failed!");
 
     signal(SIGTERM, exitCleanly);
     signal(SIGINT, exitCleanly);
@@ -118,6 +122,13 @@ int main(int argc, char **argv) {
         compile_study(&opts.re, &opts.re_extra, opts.query, pcre_opts, study_opts);
     }
 
+    if (opts.show_progress) {
+        int rv = pthread_create(&progress_worker, NULL, &progress_file_worker, NULL);
+        if (rv != 0) {
+            die("error in pthread_create(): %s", strerror(rv));
+        }
+    }
+
     if (opts.search_stream) {
         search_stream(stdin, "");
     } else {
@@ -141,13 +152,22 @@ int main(int argc, char **argv) {
         }
     }
 
+    if (opts.show_progress) {
+        progress_complete = 1;
+        if (pthread_join(progress_worker, NULL)) {
+            die("pthread_join failed!");
+        }
+    }
+
     if (opts.stats) {
         gettimeofday(&(stats.time_end), NULL);
         time_diff = ((long)stats.time_end.tv_sec * 1000000 + stats.time_end.tv_usec) -
                     ((long)stats.time_start.tv_sec * 1000000 + stats.time_start.tv_usec);
         time_diff /= 1000000;
 
+        pthread_mutex_lock(&print_mtx);
         printf("%ld matches\n%ld files searched\n%ld bytes searched\n%f seconds\n", stats.total_matches, stats.total_files, stats.total_bytes, time_diff);
+        pthread_mutex_unlock(&print_mtx);
     }
 
     if (opts.stats_summary) {
@@ -163,7 +183,9 @@ int main(int argc, char **argv) {
                 casetype = "UNKNOWN";
                 break;
         }
+        pthread_mutex_lock(&print_mtx);
         printf("\e[1;34m # A total of \e[1;31m%ld\e[1;34m lines with matches found.\e[0;34m Case \e[1;34m%s\e[0;34m%s, symlinks \e[1;34m%s\e[0;34m.\e[0m\n", stats.total_matches, casetype, casing_was_smart ? " (was smart)" : "", opts.follow_symlinks ? "on" : "off");
+        pthread_mutex_unlock(&print_mtx);
     }
 
     if (opts.pager) {
@@ -173,6 +195,7 @@ int main(int argc, char **argv) {
     pthread_mutex_destroy(&work_queue_mtx);
     pthread_mutex_destroy(&stats_mtx);
     pthread_mutex_destroy(&print_mtx);
+    pthread_mutex_destroy(&progress_mtx);
     cleanup_ignore(root_ignores);
     free(workers);
     for (i = 0; paths[i] != NULL; i++) {

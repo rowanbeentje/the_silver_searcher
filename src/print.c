@@ -11,6 +11,7 @@
 #include "options.h"
 #include "print.h"
 #include "util.h"
+#include "progress.h"
 
 int first_file_match = 1;
 
@@ -19,6 +20,11 @@ const char *color_reset = "\e[0m\e[K";
 void print_path(const char* path, const char sep) {
     log_debug("printing path");
     path = normalize_path(path);
+
+    /* If matching files or printing filenames only, clear any visible progress */
+    if (opts.print_filename_only || opts.match_files) {
+        clear_progress();
+    }
 
     if (opts.ackmate) {
         fprintf(out_fd, ":%s%c", path, sep);
@@ -33,6 +39,7 @@ void print_path(const char* path, const char sep) {
 
 void print_binary_file_matches(const char* path) {
     path = normalize_path(path);
+    clear_progress();
     print_file_separator();
     fprintf(out_fd, "Binary file %s matches.\n", path);
 }
@@ -61,6 +68,7 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
         sep = ':';
     }
 
+    clear_progress();
     print_file_separator();
 
     if (opts.print_heading == TRUE) {

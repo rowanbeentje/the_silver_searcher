@@ -85,6 +85,7 @@ Search options:\n\
                         uppercase characters\n\
 --search-binary         Search binary files for matches\n\
 --[no]shortoutput       Output matches with trimmed indentation and long lines truncated\n\
+--show-progress         Display progress information during the search (slightly slower)\n\
 --stats                 Print stats (files scanned, time taken, etc.)\n\
 --stats-summary         Print a single line of summary stats at scan end\n\
 -t --all-text           Search all text files (doesn't include hidden files)\n\
@@ -222,6 +223,7 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
         { "search-zip", no_argument, &opts.search_zip_files, 1 },
         { "search-files", no_argument, &opts.search_stream, 0 },
         { "shortoutput", no_argument, &opts.shorter_output, 1 },
+        { "show-progress", no_argument, &opts.show_progress, 1 },
         { "silent", no_argument, NULL, 0 },
         { "skip-vcs-ignores", no_argument, NULL, 'U' },
         { "smart-case", no_argument, NULL, 'S' },
@@ -521,6 +523,10 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
 
     if (!is_regex(opts.query)) {
         opts.literal = 1;
+    }
+
+    if (!isatty(fileno(stdout))) {
+        opts.show_progress = 0;
     }
 
     char *path = NULL;
