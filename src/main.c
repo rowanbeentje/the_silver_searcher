@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     int study_opts = 0;
     double time_diff;
     pthread_t *workers = NULL;
-    pthread_t progress_worker = NULL;
+    pthread_t progress_worker;
     int workers_len;
     int casing_was_smart = 0;
 
