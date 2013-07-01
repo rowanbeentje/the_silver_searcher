@@ -206,6 +206,9 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
                     if (printing_a_match && opts.color) {
                         fprintf(out_fd, "%s", color_reset);
                     }
+                    if (i == buf_len) {
+                        fputc('\n', out_fd);
+                    }
                 }
             } else if (lines_since_last_match <= opts.after) {
                 /* print context after matching line */
