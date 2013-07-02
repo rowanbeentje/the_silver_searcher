@@ -5,6 +5,7 @@
 #include "log.h"
 #include "util.h"
 #include "progress.h"
+#include "search.h"
 
 static enum log_level log_threshold = LOG_LEVEL_ERR;
 
