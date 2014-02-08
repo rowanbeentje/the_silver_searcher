@@ -1,6 +1,7 @@
 SRCS = \
 	src/decompress.c \
 	src/ignore.c \
+	src/lang.c \
 	src/log.c \
 	src/main.c \
 	src/options.c \
@@ -11,7 +12,7 @@ SRCS = \
 OBJS = $(subst .c,.o,$(SRCS))
 
 VERSION=
-CFLAGS = -O2 -Isrc/win32 -DPACKAGE_VERSION=\"0.15pre\"
+CFLAGS = -O2 -Isrc/win32 -DPACKAGE_VERSION=\"0.16\"
 LIBS = -lz -lpthread -lpcre -llzma -lshlwapi
 TARGET = ag.exe
 

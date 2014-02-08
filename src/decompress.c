@@ -1,16 +1,18 @@
 #include <string.h>
+#include <unistd.h>
 #include <zlib.h>
 
 #include "decompress.h"
 
 #ifdef HAVE_LZMA_H
 #include <lzma.h>
-#endif
-
 
 /*  http://tukaani.org/xz/xz-file-format.txt */
 const uint8_t XZ_HEADER_MAGIC[6] = { 0xFD, '7', 'z', 'X', 'Z', 0x00 };
 const uint8_t LZMA_HEADER_SOMETIMES[3] = { 0x5D, 0x00, 0x00 };
+#endif
+
+
 
 /* Code in decompress_zlib from
  *
@@ -50,10 +52,12 @@ static void* decompress_zlib(const void* buf, const int buf_len,
     result_size = ((buf_len + pagesize - 1) & ~(pagesize - 1));
     do {
         do {
+            unsigned char* tmp_result = result;
             /* Double the buffer size and realloc */
             result_size *= 2;
             result = (unsigned char*)realloc(result, result_size * sizeof(unsigned char));
             if (result == NULL) {
+                free(tmp_result);
                 log_err("Unable to allocate %d bytes to decompress file %s", result_size * sizeof(unsigned char), dir_full_path);
                 inflateEnd(&stream);
                 goto error_out;
@@ -92,13 +96,15 @@ static void* decompress_zlib(const void* buf, const int buf_len,
     return NULL;
 }
 
-static void* decompress_lwz(const void* buf, const int buf_len,
+
+static void* decompress_lzw(const void* buf, const int buf_len,
                             const char* dir_full_path, int* new_buf_len) {
     (void)buf; (void)buf_len;
-    log_err("LWZ (UNIX compress) files not yet supported: %s", dir_full_path);
+    log_err("LZW (UNIX compress) files not yet supported: %s", dir_full_path);
     *new_buf_len = 0;
     return NULL;
 }
+
 
 static void* decompress_zip(const void* buf, const int buf_len,
                             const char* dir_full_path, int* new_buf_len) {
@@ -108,6 +114,8 @@ static void* decompress_zip(const void* buf, const int buf_len,
     return NULL;
 }
 
+
+#ifdef HAVE_LZMA_H
 static void* decompress_lzma(const void* buf, const int buf_len,
                              const char* dir_full_path, int* new_buf_len) {
     lzma_stream stream = LZMA_STREAM_INIT;
@@ -130,10 +138,12 @@ static void* decompress_lzma(const void* buf, const int buf_len,
     result_size = ((buf_len + pagesize - 1) & ~(pagesize - 1));
     do {
         do {
+            unsigned char* tmp_result = result;
             /* Double the buffer size and realloc */
             result_size *= 2;
             result = (unsigned char*)realloc(result, result_size * sizeof(unsigned char));
             if (result == NULL) {
+                free(tmp_result);
                 log_err("Unable to allocate %d bytes to decompress file %s", result_size * sizeof(unsigned char), dir_full_path);
                 goto error_out;
             }
@@ -164,9 +174,12 @@ static void* decompress_lzma(const void* buf, const int buf_len,
     error_out:
     lzma_end(&stream);
     *new_buf_len = 0;
+    if (result) {
+        free(result);
+    }
     return NULL;
 }
-
+#endif
 
 
 /* This function is very hot. It's called on every file when zip is enabled. */
@@ -177,11 +190,13 @@ void* decompress(const ag_compression_type zip_type, const void* buf, const int 
         case AG_GZIP:
              return decompress_zlib(buf, buf_len, dir_full_path, new_buf_len);
         case AG_COMPRESS:
-             return decompress_lwz(buf, buf_len, dir_full_path, new_buf_len);
+             return decompress_lzw(buf, buf_len, dir_full_path, new_buf_len);
         case AG_ZIP:
              return decompress_zip(buf, buf_len, dir_full_path, new_buf_len);
+#ifdef HAVE_LZMA_H
         case AG_XZ:
              return decompress_lzma(buf, buf_len, dir_full_path, new_buf_len);
+#endif
         case AG_NO_COMPRESSION:
             log_err("File %s is not compressed", dir_full_path);
             break;
@@ -253,4 +268,3 @@ ag_compression_type is_zipped(const void* buf, const int buf_len) {
 
     return AG_NO_COMPRESSION;
 }
-

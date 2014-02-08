@@ -185,8 +185,9 @@ void load_svn_ignore_patterns(ignores *ig, const char *path) {
         goto cleanup;
     }
     char *patterns = entry;
+    size_t patterns_len = strlen(patterns);
     while (*patterns != '\0' && patterns < (entry + bytes_read)) {
-        for (line_len = 0; line_len < strlen(patterns); line_len++) {
+        for (line_len = 0; line_len < patterns_len; line_len++) {
             if (patterns[line_len] == '\n') {
                 break;
             }
@@ -197,6 +198,7 @@ void load_svn_ignore_patterns(ignores *ig, const char *path) {
             free(entry_line);
         }
         patterns += line_len + 1;
+        patterns_len -= line_len + 1;
     }
     free(entry);
     cleanup:;
@@ -265,15 +267,22 @@ static int path_ignore_search(const ignores *ig, const char *path, const char *f
 /* This function is REALLY HOT. It gets called for every file */
 int filename_filter(const char *path, const struct dirent *dir, void *baton) {
     const char *filename = dir->d_name;
+    size_t filename_len = strlen(filename);
     size_t i;
     scandir_baton_t *scandir_baton = (scandir_baton_t*) baton;
     const ignores *ig = scandir_baton->ig;
     const char *base_path = scandir_baton->base_path;
+    size_t base_path_len = strlen(base_path);
     const char *path_start = path;
     char *temp;
 
     if (!opts.follow_symlinks && is_symlink(path, dir)) {
         log_debug("File %s ignored becaused it's a symlink", dir->d_name);
+        return 0;
+    }
+
+    if (is_named_pipe(path, dir)) {
+        log_debug("%s ignored because it's a named pipe", path);
         return 0;
     }
 
@@ -290,7 +299,7 @@ int filename_filter(const char *path, const struct dirent *dir, void *baton) {
         return 1;
     }
 
-    for (i = 0; base_path[i] == path[i] && i < strlen(base_path); i++) {
+    for (i = 0; base_path[i] == path[i] && i < base_path_len; i++) {
         /* base_path always ends with "/\0" while path doesn't, so this is safe */
         path_start = path + i + 2;
     }
@@ -300,7 +309,7 @@ int filename_filter(const char *path, const struct dirent *dir, void *baton) {
         return 0;
     }
 
-    if (is_directory(path, dir) && filename[strlen(filename) - 1] != '/') {
+    if (is_directory(path, dir) && filename[filename_len - 1] != '/') {
         ag_asprintf(&temp, "%s/", filename);
         int rv = path_ignore_search(ig, path_start, temp);
         free(temp);
@@ -317,7 +326,7 @@ int filename_filter(const char *path, const struct dirent *dir, void *baton) {
             return 0;
         }
 
-        if (is_directory(path, dir) && temp[strlen(filename) - 1] != '/') {
+        if (is_directory(path, dir) && temp[filename_len - 1] != '/') {
             ag_asprintf(&temp2, "%s/", temp);
             int rv = path_ignore_search(ig, path_start, temp2);
             free(temp2);

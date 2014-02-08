@@ -1,5 +1,6 @@
 *.dSYM
 *.o
+*.plist
 .deps
 .dirstamp
 .DS_Store
@@ -21,4 +22,5 @@ Makefile.in
 missing
 src/config.h*
 stamp-h1
-*.plist
+tests/*.err
+the_silver_searcher.spec

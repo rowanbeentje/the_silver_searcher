@@ -10,6 +10,7 @@
 #include "config.h"
 #include "ignore.h"
 #include "options.h"
+#include "lang.h"
 #include "log.h"
 #include "util.h"
 
@@ -34,68 +35,71 @@ const char *color_truncate = "\e[7m"; /* inverted */
 
 /* TODO: try to obey out_fd? */
 void usage() {
-    printf("Usage: ag [OPTIONS] PATTERN [PATH]\n\
+    printf("\n");
+    printf("Usage: ag [OPTIONS] PATTERN [PATH]\n\n");
+
+    printf("  Recursively search for PATTERN in PATH.\n");
+    printf("  Like grep or ack, but faster.\n\n");
+
+    printf("Example:\n  ag -i foo /bar/\n\n");
+
+    printf("\
+Output Options:\n\
+     --ackmate            Print results in AckMate-parseable format\n\
+  -A --after [LINES]      Print lines before match (Default: 2)\n\
+  -B --before [LINES]     Print lines after match (Default: 2)\n\
+     --[no]break          Print newlines between matches in different files\n\
+                          (Enabled by default)\n\
+     --[no]color          Print color codes in results (Enabled by default)\n\
+     --color-line-number  Color codes for line numbers (Default: 1;33)\n\
+     --color-match        Color codes for result match numbers (Default: 30;43)\n\
+     --color-path         Color codes for path names (Default: 1;32)\n\
+     --color-truncate-warn Color codes for --shortoutput long line truncation (Default: 7;0)\n\
+     --column             Print column numbers in results\n\
+     --[no]heading\n\
+     --line-numbers       Print line numbers even for streams\n\
+  -C --context [LINES]    Print lines before and after matches (Default: 2)\n\
+     --[no]group          Same as --[no]break --[no]heading\n\
+  -g PATTERN              Print filenames matching PATTERN\n\
+  -l --files-with-matches Only print filenames that contain matches\n\
+                          (don't print the matching lines)\n\
+  -L --files-without-matches\n\
+                          Only print filenames that don't contain matches\n\
+     --no-numbers         Don't print line numbers\n\
+     --print-long-lines   Print matches on very long lines (Default: >2k characters)\n\
+     --[no]shortoutput    Output matches with trimmed indentation and long lines truncated\n\
+     --show-progress      Display progress information during the search (slightly slower)\n\
+     --stats              Print stats (files scanned, time taken, etc.)\n\
+     --stats-summary      Print a single line of summary stats at scan end\n\
 \n\
-Recursively search for PATTERN in PATH.\n\
-Like grep or ack, but faster.\n\
-\n\
-Example: ag -i foo /bar/\n\
-\n\
-Search options:\n\
-\n\
---ackmate               Print results in AckMate-parseable format\n\
--a --all-types          Search all files (doesn't include hidden files\n\
-                        or patterns from ignore files)\n\
--A --after [LINES]      Print lines before match (Default: 2)\n\
--B --before [LINES]     Print lines after match (Default: 2)\n\
---[no]break             Print newlines between matches in different files\n\
-                        (Enabled by default)\n\
---[no]color             Print color codes in results (Enabled by default)\n\
---color-line-number     Color codes for line numbers (Default: 1;33)\n\
---color-match           Color codes for result match numbers (Default: 30;43)\n\
---color-path            Color codes for path names (Default: 1;32)\n\
---color-truncate-warn   Color codes for --shortoutput long line truncation (Default: 7;0)\n\
---column                Print column numbers in results\n\
---line-numbers          Print line numbers even for streams\n\
--C --context [LINES]    Print lines before and after matches (Default: 2)\n\
--D --debug              Ridiculous debugging (probably not useful)\n\
---depth NUM             Search up to NUM directories deep (Default: 25)\n\
--f --follow             Follow symlinks\n\
---[no]group             Same as --[no]break --[no]heading\n\
--g PATTERN              Print filenames matching PATTERN\n\
--G, --file-search-regex PATTERN Limit search to filenames matching PATTERN\n\
---[no]heading\n\
---hidden                Search hidden files (obeys .*ignore files)\n\
--i, --ignore-case       Match case insensitively\n\
---ignore PATTERN        Ignore files/directories matching PATTERN\n\
-                        (literal file/directory names also allowed)\n\
---ignore-dir NAME       Alias for --ignore for compatibility with ack.\n\
--l --files-with-matches Only print filenames that contain matches\n\
-                        (don't print the matching lines)\n\
--L --files-without-matches\n\
-                        Only print filenames that don't contain matches\n\
--m --max-count NUM      Skip the rest of a file after NUM matches (Default: 10,000)\n\
---no-numbers            Don't show line numbers\n\
--p --path-to-agignore STRING\n\
-                        Use .agignore file at STRING\n\
---print-long-lines      Print matches on very long lines (Default: >2k characters)\n\
--Q --literal            Don't parse PATTERN as a regular expression\n\
--s --case-sensitive     Match case sensitively (Enabled by default)\n\
--S --smart-case         Match case insensitively unless PATTERN contains\n\
-                        uppercase characters\n\
---search-binary         Search binary files for matches\n\
---[no]shortoutput       Output matches with trimmed indentation and long lines truncated\n\
---show-progress         Display progress information during the search (slightly slower)\n\
---stats                 Print stats (files scanned, time taken, etc.)\n\
---stats-summary         Print a single line of summary stats at scan end\n\
--t --all-text           Search all text files (doesn't include hidden files)\n\
--u --unrestricted       Search all files (ignore .agignore, .gitignore, etc.;\n\
-                        searches binary and hidden files as well)\n\
--U --skip-vcs-ignores   Ignore VCS ignore files\n\
-                        (.gitigore, .hgignore, .svnignore; still obey .agignore)\n\
--v --invert-match\n\
--w --word-regexp        Only match whole words\n\
--z --search-zip         Search contents of compressed (e.g., gzip) files\n\
+Search Options:\n\
+  -a --all-types          Search all files (doesn't include hidden files\n\
+                          or patterns from ignore files)\n\
+  -D --debug              Ridiculous debugging (probably not useful)\n\
+     --depth NUM          Search up to NUM directories deep (Default: 25)\n\
+  -f --follow             Follow symlinks\n\
+  -G --file-search-regex  PATTERN Limit search to filenames matching PATTERN\n\
+     --hidden             Search hidden files (obeys .*ignore files)\n\
+  -i --ignore-case        Match case insensitively\n\
+     --ignore PATTERN     Ignore files/directories matching PATTERN\n\
+                          (literal file/directory names also allowed)\n\
+     --ignore-dir NAME    Alias for --ignore for compatibility with ack.\n\
+  -m --max-count NUM      Skip the rest of a file after NUM matches (Default: 10,000)\n\
+  -p --path-to-agignore STRING\n\
+                          Use .agignore file at STRING\n\
+  -Q --literal            Don't parse PATTERN as a regular expression\n\
+  -s --case-sensitive     Match case sensitively (Enabled by default)\n\
+  -S --smart-case         Match case insensitively unless PATTERN contains\n\
+                          uppercase characters\n\
+     --search-binary      Search binary files for matches\n\
+  -t --all-text           Search all text files (doesn't include hidden files)\n\
+  -u --unrestricted       Search all files (ignore .agignore, .gitignore, etc.;\n\
+                          searches binary and hidden files as well)\n\
+  -U --skip-vcs-ignores   Ignore VCS ignore files\n\
+                          (.gitignore, .hgignore, .svnignore; still obey .agignore)\n\
+  -v --invert-match\n\
+  -w --word-regexp        Only match whole words\n\
+  -z --search-zip         Search contents of compressed (e.g., gzip) files\n\
 \n");
 }
 
@@ -107,7 +111,7 @@ void init_options() {
     memset(&opts, 0, sizeof(opts));
     opts.casing = CASE_SENSITIVE;
 #ifdef _WIN32
-    opts.color = FALSE;
+    opts.color = getenv("ANSICON") ? TRUE : FALSE;
 #else
     opts.color = TRUE;
 #endif
@@ -169,9 +173,13 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
     struct stat statbuf;
     int rv;
 
+    size_t longopts_len, full_len;
+    option_t* longopts;
+    char *lang_regex = NULL;
+
     init_options();
 
-    struct option longopts[] = {
+    option_t base_longopts[] = {
         { "ackmate", no_argument, &opts.ackmate, 1 },
         { "ackmate-dir-filter", required_argument, NULL, 0 },
         { "after", required_argument, NULL, 'A' },
@@ -233,11 +241,23 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
         { "version", no_argument, &version, 1 },
         { "word-regexp", no_argument, NULL, 'w' },
         { "workers", required_argument, NULL, 0 },
-        { NULL, 0, NULL, 0 }
     };
+
+    longopts_len = (sizeof(base_longopts) / sizeof(option_t));
+    full_len = (longopts_len + LANG_COUNT + 1);
+    longopts = ag_malloc(full_len * sizeof(option_t));
+    memcpy(longopts, base_longopts, sizeof(base_longopts));
+
+    for (i = 0; i < LANG_COUNT; i++) {
+        option_t opt = { langs[i].name, no_argument, NULL, 0 };
+        longopts[i + longopts_len] = opt;
+    }
+    longopts[full_len-1] = (option_t){ NULL, 0, NULL, 0 };
 
     if (argc < 2) {
         usage();
+        cleanup_ignore(root_ignores);
+        cleanup_options();
         exit(1);
     }
 
@@ -300,7 +320,8 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
                 opts.match_files = 1;
                 /* Fall through and build regex */
             case 'G':
-                compile_study(&opts.file_search_regex, &opts.file_search_regex_extra, optarg, 0, 0);
+                compile_study(&opts.file_search_regex, &opts.file_search_regex_extra, optarg, opts.casing & PCRE_CASELESS, 0);
+                opts.casing = CASE_SENSITIVE;
                 break;
             case 'h':
                 help = 1;
@@ -410,6 +431,20 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
                 if (longopts[opt_index].flag != 0) {
                     break;
                 }
+
+                for (i = 0; i < LANG_COUNT; i++) {
+                    if (strcmp(longopts[opt_index].name, langs[i].name) == 0) {
+                        lang_regex = make_lang_regex(langs[i].extensions);
+                        compile_study(&opts.file_search_regex, &opts.file_search_regex_extra, lang_regex, 0, 0);
+                        break;
+                    }
+                }
+                if (lang_regex) {
+                    free(lang_regex);
+                    lang_regex = NULL;
+                    break;
+                }
+
                 log_err("option %s does not take a value", longopts[opt_index].name);
             default:
                 usage();
@@ -460,7 +495,7 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
             do {
                 gitconfig_res = ag_realloc(gitconfig_res, buf_len + 65);
                 buf_len += fread(gitconfig_res + buf_len, 1, 64, gitconfig_file);
-            } while (buf_len > 0 && buf_len % 64 == 0);
+            } while (!feof(gitconfig_file) && buf_len > 0 && buf_len % 64 == 0);
             gitconfig_res[buf_len] = '\0';
             load_ignore_patterns(root_ignores, gitconfig_res);
             free(gitconfig_res);

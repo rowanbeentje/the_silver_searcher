@@ -201,7 +201,10 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
                                 continue;
                             }
                         }
-                        fputc(buf[j], out_fd);
+                        /* Don't print the null terminator */
+                        if (j < buf_len) {
+                            fputc(buf[j], out_fd);
+                        }
                     }
                     if (printing_a_match && opts.color) {
                         fprintf(out_fd, "%s", color_reset);
@@ -227,6 +230,10 @@ void print_file_matches(const char* path, const char* buf, const int buf_len, co
             line++;
             if (!in_a_match) {
                 lines_since_last_match++;
+            }
+            /* File doesn't end with a newline. Print one so the output is pretty. */
+            if (i == buf_len && buf[i] != '\n') {
+                fputc('\n', out_fd);
             }
         }
     }
@@ -261,11 +268,16 @@ void print_file_separator() {
 }
 
 const char* normalize_path(const char* path) {
-    if (strlen(path) >= 3 && path[0] == '.' && path[1] == '/') {
-        return path + 2;
-    } else {
+    if (strlen(path) < 3) {
         return path;
     }
+    if (path[0] == '.' && path[1] == '/') {
+        return path + 2;
+    }
+    if (path[0] == '/' && path[1] == '/') {
+        return path + 1;
+    }
+    return path;
 }
 
 int get_next_line_break_position(const char *buf, const int line_start_position, const int line_end_position, const int current_indent) {
